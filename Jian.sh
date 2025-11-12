@@ -47,7 +47,11 @@ display_neofetch() {
         neofetch
     else
         echo -e "${YELLOW}◉ Installing neofetch...${NC}"
-        pkg install neofetch -y &> /dev/null
+        if command -v apt &> /dev/null; then
+            apt install neofetch -y &> /dev/null
+        elif command -v pkg &> /dev/null; then
+            pkg install neofetch -y &> /dev/null
+        fi
         if command -v neofetch &> /dev/null; then
             neofetch
         else
@@ -122,47 +126,41 @@ check_nik() {
     if [[ -z "$nik" ]]; then
         echo -e "${RED}◉ NIK cannot be empty!${NC}"
         echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
+        read -p "Press Enter to continue..."
         return
     fi
     
     echo -e "${BLUE}◉ Checking NIK information...${NC}"
     
-    (
-        response=$(curl -s "https://api.siputzx.my.id/api/tools/nik-checker?nik=$nik")
-        
-        printf "\r\033[K"
-        
-        if echo "$response" | grep -q '"status":true'; then
-            nama=$(echo "$response" | grep -o '"nama":"[^"]*' | sed 's/"nama":"//')
-            kelamin=$(echo "$response" | grep -o '"kelamin":"[^"]*' | sed 's/"kelamin":"//')
-            tempat_lahir=$(echo "$response" | grep -o '"tempat_lahir":"[^"]*' | sed 's/"tempat_lahir":"//')
-            usia=$(echo "$response" | grep -o '"usia":"[^"]*' | sed 's/"usia":"//')
-            provinsi=$(echo "$response" | grep -o '"provinsi":"[^"]*' | sed 's/"provinsi":"//')
-            kabupaten=$(echo "$response" | grep -o '"kabupaten":"[^"]*' | sed 's/"kabupaten":"//')
-            kecamatan=$(echo "$response" | grep -o '"kecamatan":"[^"]*' | sed 's/"kecamatan":"//')
-            kelurahan=$(echo "$response" | grep -o '"kelurahan":"[^"]*' | sed 's/"kelurahan":"//')
-            alamat=$(echo "$response" | grep -o '"alamat":"[^"]*' | sed 's/"alamat":"//')
-            
-            echo -e "${TEAL}◉ NIK Information:${NC}"
-            echo -e "${WHITE}  Nama: $nama${NC}"
-            echo -e "${WHITE}  Jenis Kelamin: $kelamin${NC}"
-            echo -e "${WHITE}  Tempat/Tgl Lahir: $tempat_lahir${NC}"
-            echo -e "${WHITE}  Usia: $usia${NC}"
-            echo -e "${WHITE}  Provinsi: $provinsi${NC}"
-            echo -e "${WHITE}  Kabupaten: $kabupaten${NC}"
-            echo -e "${WHITE}  Kecamatan: $kecamatan${NC}"
-            echo -e "${WHITE}  Kelurahan: $kelurahan${NC}"
-            echo -e "${WHITE}  Alamat: $alamat${NC}"
-        else
-            echo -e "${RED}◉ Failed to get NIK information${NC}"
-        fi
-        
-        echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
-    ) &
+    response=$(curl -s "https://api.siputzx.my.id/api/tools/nik-checker?nik=$nik")
     
-    local pid=$!
-    spinner $pid
-    wait $pid
+    if echo "$response" | grep -q '"status":true'; then
+        nama=$(echo "$response" | grep -o '"nama":"[^"]*' | sed 's/"nama":"//')
+        kelamin=$(echo "$response" | grep -o '"kelamin":"[^"]*' | sed 's/"kelamin":"//')
+        tempat_lahir=$(echo "$response" | grep -o '"tempat_lahir":"[^"]*' | sed 's/"tempat_lahir":"//')
+        usia=$(echo "$response" | grep -o '"usia":"[^"]*' | sed 's/"usia":"//')
+        provinsi=$(echo "$response" | grep -o '"provinsi":"[^"]*' | sed 's/"provinsi":"//')
+        kabupaten=$(echo "$response" | grep -o '"kabupaten":"[^"]*' | sed 's/"kabupaten":"//')
+        kecamatan=$(echo "$response" | grep -o '"kecamatan":"[^"]*' | sed 's/"kecamatan":"//')
+        kelurahan=$(echo "$response" | grep -o '"kelurahan":"[^"]*' | sed 's/"kelurahan":"//')
+        alamat=$(echo "$response" | grep -o '"alamat":"[^"]*' | sed 's/"alamat":"//')
+        
+        echo -e "${TEAL}◉ NIK Information:${NC}"
+        echo -e "${WHITE}  Nama: $nama${NC}"
+        echo -e "${WHITE}  Jenis Kelamin: $kelamin${NC}"
+        echo -e "${WHITE}  Tempat/Tgl Lahir: $tempat_lahir${NC}"
+        echo -e "${WHITE}  Usia: $usia${NC}"
+        echo -e "${WHITE}  Provinsi: $provinsi${NC}"
+        echo -e "${WHITE}  Kabupaten: $kabupaten${NC}"
+        echo -e "${WHITE}  Kecamatan: $kecamatan${NC}"
+        echo -e "${WHITE}  Kelurahan: $kelurahan${NC}"
+        echo -e "${WHITE}  Alamat: $alamat${NC}"
+    else
+        echo -e "${RED}◉ Failed to get NIK information${NC}"
+    fi
+    
+    echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
+    read -p "Press Enter to continue..."
 }
 
 ngl_spammer() {
@@ -185,28 +183,24 @@ ngl_spammer() {
     if [[ -z "$target" || -z "$message" || -z "$count" ]]; then
         echo -e "${RED}◉ All fields are required!${NC}"
         echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
+        read -p "Press Enter to continue..."
         return
     fi
     
     echo -e "${BLUE}◉ Sending $count messages...${NC}"
     
-    (
-        encoded_target=$(echo "$target" | sed 's/ /%20/g')
-        encoded_message=$(echo "$message" | sed 's/ /%20/g')
-        
-        for ((i=1; i<=count; i++)); do
-            response=$(curl -s "https://piereeapi.vercel.app/tools/ngl?user=$encoded_target&msg=$encoded_message")
-            echo -e "${GREEN}◉ Message $i sent${NC}"
-            sleep 1
-        done
-        
-        echo -e "${TEAL}◉ Successfully sent $count messages to $target${NC}"
-        echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
-    ) &
+    encoded_target=$(echo "$target" | sed 's/ /%20/g')
+    encoded_message=$(echo "$message" | sed 's/ /%20/g')
     
-    local pid=$!
-    spinner $pid
-    wait $pid
+    for ((i=1; i<=count; i++)); do
+        response=$(curl -s "https://piereeapi.vercel.app/tools/ngl?user=$encoded_target&msg=$encoded_message")
+        echo -e "${GREEN}◉ Message $i sent${NC}"
+        sleep 1
+    done
+    
+    echo -e "${TEAL}◉ Successfully sent $count messages to $target${NC}"
+    echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
+    read -p "Press Enter to continue..."
 }
 
 chat_with_ai() {
@@ -234,38 +228,31 @@ chat_with_ai() {
         
         echo -e "${BLUE}◉ Processing request...${NC}"
         
-        (
-            case $model in
-                "gpt4o")
-                    response=$(call_gpt4o "$question")
-                    ;;
-                "groq")
-                    response=$(call_groq "$question")
-                    ;;
-                "deepseek")
-                    response=$(call_deepseek "$question")
-                    ;;
-                "felo")
-                    response=$(call_felo "$question")
-                    ;;
-                *)
-                    response="Model not implemented yet"
-                    ;;
-            esac
-            
-            printf "\r\033[K"
-            if [[ -n "$response" ]]; then
-                echo -e "${TEAL}◉ $model_name: ${WHITE}$response${NC}"
-            else
-                echo -e "${RED}◉ Failed to get response${NC}"
-            fi
-            
-            echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
-        ) &
+        case $model in
+            "gpt4o")
+                response=$(call_gpt4o "$question")
+                ;;
+            "groq")
+                response=$(call_groq "$question")
+                ;;
+            "deepseek")
+                response=$(call_deepseek "$question")
+                ;;
+            "felo")
+                response=$(call_felo "$question")
+                ;;
+            *)
+                response="Model not implemented yet"
+                ;;
+        esac
         
-        local pid=$!
-        spinner $pid
-        wait $pid
+        if [[ -n "$response" ]]; then
+            echo -e "${TEAL}◉ $model_name: ${WHITE}$response${NC}"
+        else
+            echo -e "${RED}◉ Failed to get response${NC}"
+        fi
+        
+        echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
     done
 }
 
@@ -299,6 +286,7 @@ ai_chat_menu() {
                 ;;
             *)
                 echo -e "${RED}◉ Invalid selection! Choose 0-4${NC}"
+                sleep 2
                 ;;
         esac
     done
@@ -307,7 +295,7 @@ ai_chat_menu() {
 main() {
     if ! command -v curl &> /dev/null; then
         echo -e "${RED}◉ curl is not installed!${NC}"
-        echo -e "${YELLOW}◉ Install with: pkg install curl${NC}"
+        echo -e "${YELLOW}◉ Install with: apt install curl${NC}"
         exit 1
     fi
     
@@ -338,6 +326,7 @@ main() {
                 ;;
             *)
                 echo -e "${RED}◉ Invalid selection! Choose 0-3${NC}"
+                sleep 2
                 ;;
         esac
     done
