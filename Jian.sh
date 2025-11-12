@@ -26,59 +26,102 @@ spinner() {
     printf "    \b\b\b\b"
 }
 
-animate_logo() {
-    local frames=(
-        "          _______  "
-        "         /       / "
-        "___     /   ____/   "
-        ":   :  /   /:       "
-        " :   :/___/  :      "
-        "  :       :   :     "
-        "   :_______:   :    JianTools v4.0"
-        "           /   /    Owner:  JianCode"
-        "          /   /     Premium: false"
-        "          :  /      TELEGRAM @ JianCode"
-        "           :/       "
-    )
+get_system_info() {
+    system=$(uname -o 2>/dev/null || echo "Android")
+    arch=$(uname -m)
     
-    while true; do
-        clear
-        echo -e "${CYAN}"
-        for line in "${frames[@]}"; do
-            echo "$line"
-        done
-        echo -e "${NC}"
-        echo -e "${PURPLE}              JIAN TOOLS v4.0${NC}"
-        echo
-        break
-    done
+    if [ -f /proc/version ]; then
+        kernel=$(grep -o 'Linux version [^ ]*' /proc/version | cut -d' ' -f3)
+    else
+        kernel=$(uname -r)
+    fi
+    
+    if [ -f /proc/cpuinfo ]; then
+        cpu=$(grep -m1 -o 'Hardware[^:]*: [^']*' /proc/cpuinfo | cut -d':' -f2 | sed 's/^ //')
+        if [ -z "$cpu" ]; then
+            cpu=$(grep -m1 -o 'processor[^:]*: [^']*' /proc/cpuinfo | head -1)
+        fi
+        cpu_cores=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo "8")
+    else
+        cpu="ARM Processor"
+        cpu_cores=$(nproc 2>/dev/null || echo "8")
+    fi
+    
+    if [ -f /proc/meminfo ]; then
+        total_mem_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+        free_mem_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+        total_mem_mb=$((total_mem_kb / 1024))
+        free_mem_mb=$((free_mem_kb / 1024))
+        used_mem_mb=$((total_mem_mb - free_mem_mb))
+        memory_display="${used_mem_mb}MiB / ${total_mem_mb}MiB"
+    else
+        memory_display="Unknown"
+    fi
+    
+    if [ -f /proc/uptime ]; then
+        uptime_sec=$(awk '{print int($1)}' /proc/uptime)
+        uptime_days=$((uptime_sec / 86400))
+        uptime_hours=$(( (uptime_sec % 86400) / 3600 ))
+        uptime_minutes=$(( (uptime_sec % 3600) / 60 ))
+        if [ $uptime_days -gt 0 ]; then
+            uptime_display="${uptime_days} days, ${uptime_hours} hours"
+        else
+            uptime_display="${uptime_hours} hours, ${uptime_minutes} minutes"
+        fi
+    else
+        uptime_display="Unknown"
+    fi
+    
+    model=$(getprop ro.product.model 2>/dev/null || echo "Mobile Device")
+    brand=$(getprop ro.product.brand 2>/dev/null || echo "Unknown")
+    android_version=$(getprop ro.build.version.release 2>/dev/null || echo "Unknown")
+    
+    if [ "$system" = "Android" ]; then
+        system_display="Android ${android_version}"
+        cpu_display="${cpu} (${cpu_cores})"
+        device_display="${brand} ${model}"
+    else
+        system_display="$system"
+        cpu_display="${cpu} (${cpu_cores})"
+        device_display="Mobile Device"
+    fi
 }
 
 display_header() {
-    animate_logo
-    
+    get_system_info
     echo -e "${BLUE}────────────────────────────────────────────────────────────────${NC}"
-    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}System: Ubuntu 22.04 LTS x86_64                          ${BLUE}│${NC}"
-    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}CPU: AMD Ryzen 7 5800X (16) @ 3.800GHz                   ${BLUE}│${NC}"
-    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}Memory: 15888MiB / 32061MiB                              ${BLUE}│${NC}"
-    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}Uptime: 2 hours, 35 minutes                              ${BLUE}│${NC}"
+    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}System: $system_display${BLUE}│${NC}" | sed "s/System: $system_display/System: $system_display$(printf '%*s' $((50 - ${#system_display})) )/"
+    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}Device: $device_display${BLUE}│${NC}" | sed "s/Device: $device_display/Device: $device_display$(printf '%*s' $((50 - ${#device_display})) )/"
+    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}CPU: $cpu_display${BLUE}│${NC}" | sed "s/CPU: $cpu_display/CPU: $cpu_display$(printf '%*s' $((50 - ${#cpu_display})) )/"
+    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}Memory: $memory_display${BLUE}│${NC}" | sed "s/Memory: $memory_display/Memory: $memory_display$(printf '%*s' $((50 - ${#memory_display})) )/"
+    echo -e "${BLUE}│ ${GREEN}◉ ${WHITE}Uptime: $uptime_display${BLUE}│${NC}" | sed "s/Uptime: $uptime_display/Uptime: $uptime_display$(printf '%*s' $((50 - ${#uptime_display})) )/"
     echo -e "${BLUE}────────────────────────────────────────────────────────────────${NC}"
     echo
 }
 
-show_tools() {
+show_ai_menu() {
+    echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
+    echo -e "${CYAN}│                      JIAN AI CHAT MENU                     │${NC}"
+    echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
+    echo -e "${CYAN}│ ${GREEN}1${CYAN} │ ${WHITE}◈ GPT-4o ${CYAN}         │ ${YELLOW}OpenAI Latest Model               ${CYAN}│${NC}"
+    echo -e "${CYAN}│ ${GREEN}2${CYAN} │ ${WHITE}◈ DeepSeek ${CYAN}       │ ${YELLOW}DeepSeek Coder                    ${CYAN}│${NC}"
+    echo -e "${CYAN}│ ${GREEN}3${CYAN} │ ${WHITE}◈ Groq ${CYAN}           │ ${YELLOW}Groq AI Model                     ${CYAN}│${NC}"
+    echo -e "${CYAN}│ ${GREEN}4${CYAN} │ ${WHITE}◈ Felo ${CYAN}           │ ${YELLOW}Search Assistant                  ${CYAN}│${NC}"
+    echo -e "${CYAN}│                                                        │${NC}"
+    echo -e "${CYAN}│ ${RED}0${CYAN} │ ${RED}◉ Back ${CYAN}           │ ${RED}Back to Main Menu                 ${CYAN}│${NC}"
+    echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
+    echo
+}
+
+show_tools_menu() {
     echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
-    echo -e "${PURPLE}│                    JIAN TOOLS SELECTION                   │${NC}"
+    echo -e "${PURPLE}│                    JIAN TOOLS MENU                       │${NC}"
     echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
-    echo -e "${PURPLE}│ ${GREEN}1${PURPLE} │ ${CYAN}◈ NIK Checker ${PURPLE}    │ ${YELLOW}Check NIK Information              ${PURPLE}│${NC}"
-    echo -e "${PURPLE}│ ${GREEN}2${PURPLE} │ ${CYAN}◈ NGL Spammer ${PURPLE}    │ ${YELLOW}Send Anonymous Messages           ${PURPLE}│${NC}"
-    echo -e "${PURPLE}│ ${GREEN}3${PURPLE} │ ${CYAN}◈ GPT-4o ${PURPLE}         │ ${YELLOW}OpenAI Latest Model               ${PURPLE}│${NC}"
-    echo -e "${PURPLE}│ ${GREEN}4${PURPLE} │ ${CYAN}◈ DeepSeek ${PURPLE}       │ ${YELLOW}DeepSeek Coder                    ${PURPLE}│${NC}"
-    echo -e "${PURPLE}│ ${GREEN}5${PURPLE} │ ${CYAN}◈ Groq ${PURPLE}           │ ${YELLOW}Groq AI Model                     ${PURPLE}│${NC}"
-    echo -e "${PURPLE}│ ${GREEN}6${PURPLE} │ ${CYAN}◈ Felo ${PURPLE}           │ ${YELLOW}Search Assistant                  ${PURPLE}│${NC}"
+    echo -e "${PURPLE}│ ${GREEN}1${PURPLE} │ ${WHITE}◈ NIK Checker ${PURPLE}    │ ${YELLOW}Check NIK Information              ${PURPLE}│${NC}"
+    echo -e "${PURPLE}│ ${GREEN}2${PURPLE} │ ${WHITE}◈ NGL Spammer ${PURPLE}    │ ${YELLOW}Send Anonymous Messages           ${PURPLE}│${NC}"
     echo -e "${PURPLE}│                                                        │${NC}"
+    echo -e "${PURPLE}│ ${GREEN}3${PURPLE} │ ${WHITE}◈ AI Chat ${PURPLE}        │ ${YELLOW}Open AI Chat Menu                 ${PURPLE}│${NC}"
     echo -e "${PURPLE}│ ${RED}0${PURPLE} │ ${RED}◉ Exit ${PURPLE}           │ ${RED}Exit Terminal                       ${PURPLE}│${NC}"
-    echo -e "${PURPLE}│ ${RED}9${PURPLE} │ ${RED}◉ Clear ${PURPLE}          │ ${RED}Clear Screen                        ${PURPLE}│${NC}"
     echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
     echo
 }
@@ -120,6 +163,7 @@ check_nik() {
     
     if [[ -z "$nik" ]]; then
         echo -e "${RED}◉ NIK cannot be empty!${NC}"
+        echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
         return
     fi
     
@@ -182,6 +226,7 @@ ngl_spammer() {
     
     if [[ -z "$target" || -z "$message" || -z "$count" ]]; then
         echo -e "${RED}◉ All fields are required!${NC}"
+        echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
         return
     fi
     
@@ -212,15 +257,15 @@ chat_with_ai() {
     
     echo -e "${GREEN}◉ Selected: ${WHITE}$model_name${NC}"
     echo -e "${YELLOW}◉ Type 'back' to return to menu${NC}"
-    echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
+    echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
     
     while true; do
-        echo -e "${CYAN}"
+        echo -e "${WHITE}"
         read -p "◉ You: " question
         echo -e "${NC}"
         
         if [[ "$question" == "back" ]]; then
-            echo -e "${YELLOW}◉ Returning to tools selection...${NC}"
+            echo -e "${YELLOW}◉ Returning to AI menu...${NC}"
             break
         fi
         
@@ -257,12 +302,45 @@ chat_with_ai() {
                 echo -e "${RED}◉ Failed to get response${NC}"
             fi
             
-            echo -e "${PURPLE}────────────────────────────────────────────────────────────────${NC}"
+            echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
         ) &
         
         local pid=$!
         spinner $pid
         wait $pid
+    done
+}
+
+ai_chat_menu() {
+    while true; do
+        display_header
+        show_ai_menu
+        
+        echo -e "${CYAN}"
+        read -p "◉ Select AI model (0-4): " choice
+        echo -e "${NC}"
+        
+        case $choice in
+            1)
+                chat_with_ai "gpt4o" "GPT-4o"
+                ;;
+            2)
+                chat_with_ai "deepseek" "DeepSeek AI"
+                ;;
+            3)
+                chat_with_ai "groq" "Groq AI"
+                ;;
+            4)
+                chat_with_ai "felo" "Felo Search"
+                ;;
+            0)
+                echo -e "${YELLOW}◉ Returning to main menu...${NC}"
+                break
+                ;;
+            *)
+                echo -e "${RED}◉ Invalid selection! Choose 0-4${NC}"
+                ;;
+        esac
     done
 }
 
@@ -275,10 +353,10 @@ main() {
     
     while true; do
         display_header
-        show_tools
+        show_tools_menu
         
-        echo -e "${CYAN}"
-        read -p "◉ Select option (0-9): " choice
+        echo -e "${PURPLE}"
+        read -p "◉ Select option (0-3): " choice
         echo -e "${NC}"
         
         case $choice in
@@ -289,19 +367,7 @@ main() {
                 ngl_spammer
                 ;;
             3)
-                chat_with_ai "gpt4o" "GPT-4o"
-                ;;
-            4)
-                chat_with_ai "deepseek" "DeepSeek AI"
-                ;;
-            5)
-                chat_with_ai "groq" "Groq AI"
-                ;;
-            6)
-                chat_with_ai "felo" "Felo Search"
-                ;;
-            9)
-                display_header
+                ai_chat_menu
                 ;;
             0)
                 echo -e "${GREEN}◉ Thank you for using JianTools${NC}"
@@ -309,8 +375,7 @@ main() {
                 exit 0
                 ;;
             *)
-                echo -e "${RED}◉ Invalid selection! Choose 0-9${NC}"
-                sleep 2
+                echo -e "${RED}◉ Invalid selection! Choose 0-3${NC}"
                 ;;
         esac
     done
